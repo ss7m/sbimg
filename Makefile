@@ -1,4 +1,4 @@
-LIBS=libpng x11 xft
+LIBS=libpng x11 xext
 
 # -std=c90
 CFLAGS=-Wall -Wextra -Wpedantic -std=c90 -pedantic \

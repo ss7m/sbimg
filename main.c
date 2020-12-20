@@ -4,9 +4,14 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <X11/extensions/XShm.h>
+
 #define MOVE_AMT 10
 
 Display *display;
+XShmSegmentInfo shminfo;
 
 void sbimg_error(char *format, ...) {
         va_list ap;
@@ -19,19 +24,26 @@ void sbimg_error(char *format, ...) {
 XImage *sbimg_create_ximage(struct sbimg_image *image) {
         /* Xlib has every pixel take up 4 bytes??? idk tbh */
         size_t x, y;
-        char *data = malloc(sizeof(char) * image->width * image->height * 4);
-        XImage *ximage = XCreateImage(
+        /* char *data = malloc(sizeof(char) * image->width * image->height * 4); */
+        XImage *ximage = XShmCreateImage(
                 display,
                 CopyFromParent,
                 24,
                 ZPixmap,
-                0,
-                data,
+                NULL,
+                &shminfo,
                 image->width,
-                image->height,
-                32,
-                0
+                image->height
         );
+
+        shminfo.shmid = shmget(
+                IPC_PRIVATE,
+                ximage->bytes_per_line * ximage->height,
+                IPC_CREAT | 0777
+        );
+        shminfo.shmaddr = ximage->data = shmat(shminfo.shmid, 0, 0);
+        shminfo.readOnly = False;
+        XShmAttach(display, &shminfo);
 
         for (x = 0; x < image->width; x++) {
                 for (y = 0; y < image->height; y++) {
@@ -126,7 +138,7 @@ int main(void) {
                                 image.height,
                                 false
                         );
-                        XPutImage(
+                        XShmPutImage(
                                 display,
                                 window,
                                 gc,
@@ -135,9 +147,11 @@ int main(void) {
                                 center_x - image.width / 2,
                                 center_y - image.height / 2,
                                 image.width,
-                                image.height
+                                image.height,
+                                false
                         );
                         XFlush(display);
+                        sleep(1);
                 }
         }
 
