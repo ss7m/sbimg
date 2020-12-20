@@ -48,10 +48,10 @@ int main(void) {
         struct sbimg_image image;
         XImage *ximage;
         GC gc;
-        Window window;
+        Window window, child_window;
 
         display = XOpenDisplay(NULL);
-        sbimg_image_init(&image, "../../../Pictures/bliss.png");
+        sbimg_image_init(&image, "/home/sam-barr/Pictures/bliss.png");
         ximage = sbimg_create_ximage(&image);
         width = image.width;
         height = image.height;
@@ -67,43 +67,40 @@ int main(void) {
                 WhitePixel(display, DefaultScreen(display)), /* border color */
                 WhitePixel(display, DefaultScreen(display)) /* background color */
         );
+        child_window = XCreateSimpleWindow(
+                display,
+                window,
+                center_x - width / 2,
+                center_y - height / 2,
+                width, height,
+                500,
+                WhitePixel(display, DefaultScreen(display)), /* border color */
+                WhitePixel(display, DefaultScreen(display)) /* background color */
+        );
         XSelectInput(
                 display,
                 window,
                 KeyPressMask | StructureNotifyMask | ExposureMask
         );
         XMapWindow(display, window);
+        XMapWindow(display, child_window);
         gc = XCreateGC(display, window, 0, NULL);
-        XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
+
+        XPutImage(
+                display,
+                child_window,
+                gc,
+                ximage,
+                0, 0, 0, 0,
+                image.width, image.height
+        );
 
         for(;;) {
-                int redraw = false, current_x = center_x, current_y = center_y;
+                int redraw = false;
                 double percent;
                 XEvent e;
 
                 XNextEvent(display, &e);
-
-                /* discard extra key press events */
-                /*
-                for (;;) {
-                        XEvent ne;
-                        XNextEvent(display, &e);
-                        printf("hi\n");
-
-                        if (XEventsQueued(display, QueuedAlready) == 0) {
-                                break;
-                        } else if (e.type != KeyPress) {
-                                break;
-                        }
-
-                        XPeekEvent(display, &ne);
-                        if (e.xkey.keycode != ne.xkey.keycode) {
-                                printf("hi\n");
-                                break;
-                        }
-                }
-                printf("\n");
-                */
 
                 switch(e.type) {
                 case Expose:
@@ -117,6 +114,7 @@ int main(void) {
                         percent = ((1.0) * center_y) / height;
                         center_y = percent * e.xconfigure.height;
                         height = e.xconfigure.height;
+                        redraw = true;
 
                         break;
                 case KeyPress:
@@ -140,27 +138,23 @@ int main(void) {
                 }
 
                 if (redraw) {
-                        XClearArea(
+                        XMoveResizeWindow(
                                 display,
-                                window,
-                                current_x - image.width / 2,
-                                current_y - image.height / 2,
-                                image.width,
-                                image.height,
-                                false
-                        );
-                        XPutImage(
-                                display,
-                                window,
-                                gc,
-                                ximage,
-                                0, 0,
+                                child_window,
                                 center_x - image.width / 2,
                                 center_y - image.height / 2,
                                 image.width,
                                 image.height
                         );
-                        XFlush(display);
+                        XPutImage(
+                                display,
+                                child_window,
+                                gc,
+                                ximage,
+                                0, 0, 0, 0,
+                                image.width,
+                                image.height
+                        );
                 }
         }
 
@@ -168,6 +162,7 @@ cleanup:
         XDestroyImage(ximage);
         sbimg_image_destroy(&image);
         XFreeGC(display, gc);
+        XDestroyWindow(display, child_window);
         XDestroyWindow(display, window);
         XCloseDisplay(display);
         return EXIT_SUCCESS;
