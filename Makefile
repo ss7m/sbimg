@@ -2,7 +2,8 @@ LIBS=libpng x11 xft
 
 # -std=c90
 CFLAGS=-Wall -Wextra -Wpedantic -std=c90 -pedantic \
-	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done)
+	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done) \
+	   -D_POSIX_C_SOURCE=199309L
 
 SRCS=main.c image.c
 OBJS=$(SRCS:.c=.o)

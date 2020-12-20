@@ -44,14 +44,17 @@ XImage *sbimg_create_ximage(struct sbimg_image *image) {
 }
 
 int main(void) {
-        int width, height, center_x, center_y;
+        int width, height, center_x, center_y, redraw = true;
+        struct timespec last_redraw;
         struct sbimg_image image;
         XImage *ximage;
         GC gc;
         Window window;
+        
+        clock_gettime(CLOCK_REALTIME, &last_redraw);
 
         display = XOpenDisplay(NULL);
-        sbimg_image_init(&image, "../../../Pictures/bliss.png");
+        sbimg_image_init(&image, "roses1.png");
         ximage = sbimg_create_ximage(&image);
         width = image.width;
         height = image.height;
@@ -77,33 +80,10 @@ int main(void) {
         XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
 
         for(;;) {
-                int redraw = false, current_x = center_x, current_y = center_y;
                 double percent;
                 XEvent e;
 
                 XNextEvent(display, &e);
-
-                /* discard extra key press events */
-                /*
-                for (;;) {
-                        XEvent ne;
-                        XNextEvent(display, &e);
-                        printf("hi\n");
-
-                        if (XEventsQueued(display, QueuedAlready) == 0) {
-                                break;
-                        } else if (e.type != KeyPress) {
-                                break;
-                        }
-
-                        XPeekEvent(display, &ne);
-                        if (e.xkey.keycode != ne.xkey.keycode) {
-                                printf("hi\n");
-                                break;
-                        }
-                }
-                printf("\n");
-                */
 
                 switch(e.type) {
                 case Expose:
@@ -117,6 +97,7 @@ int main(void) {
                         percent = ((1.0) * center_y) / height;
                         center_y = percent * e.xconfigure.height;
                         height = e.xconfigure.height;
+                        redraw = true;
 
                         break;
                 case KeyPress:
@@ -140,15 +121,17 @@ int main(void) {
                 }
 
                 if (redraw) {
-                        XClearArea(
-                                display,
-                                window,
-                                current_x - image.width / 2,
-                                current_y - image.height / 2,
-                                image.width,
-                                image.height,
-                                false
-                        );
+                        struct timespec now;
+                        clock_gettime(CLOCK_REALTIME, &now);
+
+                        if (now.tv_sec <= last_redraw.tv_sec
+                                && now.tv_nsec - last_redraw.tv_nsec < 100000000L) {
+                                continue;
+                        }
+
+                        redraw = false;
+                        last_redraw = now;
+                        XClearWindow(display, window);
                         XPutImage(
                                 display,
                                 window,
