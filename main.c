@@ -51,7 +51,7 @@ int main(void) {
         Window window;
 
         display = XOpenDisplay(NULL);
-        sbimg_image_init(&image, "roses1.png");
+        sbimg_image_init(&image, "../../../Pictures/bliss.png");
         ximage = sbimg_create_ximage(&image);
         width = image.width;
         height = image.height;
@@ -82,6 +82,29 @@ int main(void) {
                 XEvent e;
 
                 XNextEvent(display, &e);
+
+                /* discard extra key press events */
+                /*
+                for (;;) {
+                        XEvent ne;
+                        XNextEvent(display, &e);
+                        printf("hi\n");
+
+                        if (XEventsQueued(display, QueuedAlready) == 0) {
+                                break;
+                        } else if (e.type != KeyPress) {
+                                break;
+                        }
+
+                        XPeekEvent(display, &ne);
+                        if (e.xkey.keycode != ne.xkey.keycode) {
+                                printf("hi\n");
+                                break;
+                        }
+                }
+                printf("\n");
+                */
+
                 switch(e.type) {
                 case Expose:
                         redraw = true;

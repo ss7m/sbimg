@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <time.h>
 
 #define DEBUG_BOOL(b) printf("%s\n", (b) ? "true" : "false")
 #define true 1
