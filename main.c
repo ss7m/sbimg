@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
         XSetWMProtocols(display, winstate.window, &delete_message, 1);
 
         for(;;) {
-                int redraw = false;
+                int force_redraw = false;
                 XEvent e;
 
                 /* discard extra events */
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 
                 switch(e.type) {
                 case Expose:
-                        redraw = true;
+                        force_redraw = true;
                         break;
                 case ConfigureNotify:
                         sbimg_winstate_set_dimensions(
@@ -82,7 +82,6 @@ int main(int argc, char **argv) {
                                 e.xconfigure.width,
                                 e.xconfigure.height
                         );
-                        redraw = true;
                         break;
                 case ClientMessage:
                         if ((Atom)e.xclient.data.l[0] == delete_message) {
@@ -138,12 +137,9 @@ int main(int argc, char **argv) {
                                 }
                                 break;
                         }
-                        redraw = true;
                 }
 
-                if (redraw) {
-                        sbimg_winstate_redraw(&winstate);
-                }
+                sbimg_winstate_redraw(&winstate, force_redraw);
         }
 
 cleanup:

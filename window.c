@@ -4,6 +4,21 @@
 #include "files.h"
 #include "window.h"
 
+#define tlx(w) ((w)->center_x - (w)->ximage->width / 2)
+#define tly(w) ((w)->center_y - (w)->ximage->height / 2)
+#define imw(w) ((w)->ximage->width \
+        + min(0, tlx(w)) \
+        + min(0, (w)->window_width - tlx(w) - (w)->ximage->width))
+#define imh(w) ((w)->ximage->height \
+        + min(0, tly(w)) \
+        + min(0, (w)->window_height - tly(w) - (w)->ximage->height))
+#define txth(w) (sbimg_textbox_font_height(&w->textbox) * 1.5)
+
+enum {
+        TEXT = (1 << 0),
+        IMAGE = (1 << 2)
+};
+
 static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
         /* Xlib has every pixel take up 4 bytes??? idk tbh */
         size_t x, y, xwidth, xheight;
@@ -50,7 +65,6 @@ static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
         }
 }
 
-
 void sbimg_winstate_destroy(struct sbimg_winstate *winstate) {
         sbimg_image_destroy(&winstate->image);
         sbimg_textbox_destroy(&winstate->textbox);
@@ -69,6 +83,7 @@ void sbimg_winstate_init(
         double font_size)
 {
         winstate->files = *files;
+        winstate->changes = 0;
         winstate->zoom = 1.0;
         sbimg_image_init(&winstate->image, sbimg_files_curr(files));
         sbimg_winstate_gen_ximage(winstate);
@@ -112,7 +127,6 @@ void sbimg_winstate_init(
                 font_string,
                 font_size
         );
-        winstate->text_height = sbimg_textbox_font_height(&winstate->textbox) * 1.5;
 }
 
 void sbimg_winstate_set_dimensions(
@@ -120,6 +134,8 @@ void sbimg_winstate_set_dimensions(
         int width,
         int height)
 {
+        winstate->changes |= TEXT;
+        winstate->changes |= IMAGE;
         winstate->center_x = maprange(
                 winstate->center_x,
                 0, winstate->window_width,
@@ -136,6 +152,8 @@ void sbimg_winstate_set_dimensions(
 }
 
 void sbimg_winstate_prev_image(struct sbimg_winstate *winstate) {
+        winstate->changes |= IMAGE;
+        winstate->changes |= TEXT;
         winstate->zoom = 1.0;
         winstate->center_x = winstate->window_width / 2;
         winstate->center_y = winstate->window_height / 2;
@@ -150,6 +168,8 @@ void sbimg_winstate_prev_image(struct sbimg_winstate *winstate) {
 }
 
 void sbimg_winstate_next_image(struct sbimg_winstate *winstate) {
+        winstate->changes |= IMAGE;
+        winstate->changes |= TEXT;
         winstate->zoom = 1.0;
         winstate->center_x = winstate->window_width / 2;
         winstate->center_y = winstate->window_height / 2;
@@ -164,73 +184,77 @@ void sbimg_winstate_next_image(struct sbimg_winstate *winstate) {
 }
 
 void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y) {
+        winstate->changes |= IMAGE;
         winstate->center_x += x;
         winstate->center_y += y;
 }
 
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, double zoom_amt) {
+        winstate->changes |= IMAGE;
         winstate->zoom *= zoom_amt;
         XDestroyImage(winstate->ximage);
         sbimg_winstate_gen_ximage(winstate);
 }
 
-void sbimg_winstate_redraw(struct sbimg_winstate *winstate) {
+void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
         char str[1024] = {0};
-        int top_left_x, top_left_y, im_width, im_height;
+        int top_left_x, top_left_y, im_width, im_height, text_height;
 
-        top_left_x = winstate->center_x - winstate->ximage->width / 2;
-        top_left_y = winstate->center_y - winstate->ximage->height / 2;
+        top_left_x = tlx(winstate);
+        top_left_y = tly(winstate);
+        im_width = imw(winstate);
+        im_height = imh(winstate);
+        text_height = txth(winstate);
 
-        im_width = winstate->ximage->width
-                + min(0, top_left_x)
-                + min(0, winstate->window_width - top_left_x - winstate->ximage->width);
-        im_height = winstate->ximage->height
-                + min(0, top_left_y)
-                + min(0, winstate->window_height - top_left_y - winstate->ximage->height);
+        if (winstate->changes & IMAGE || force_redraw) {
+                XMoveResizeWindow(
+                        display,
+                        winstate->image_window,
+                        top_left_x,
+                        top_left_y,
+                        winstate->ximage->width,
+                        winstate->ximage->height
+                );
+                XPutImage(
+                        display,
+                        winstate->image_window,
+                        winstate->gc,
+                        winstate->ximage,
+                        max(0, -top_left_x),
+                        max(0, -top_left_y),
+                        max(0, -top_left_x),
+                        max(0, -top_left_y),
+                        im_width,
+                        im_height
+                );
+        }
 
-        XMoveResizeWindow(
-                display,
-                winstate->image_window,
-                top_left_x,
-                top_left_y,
-                winstate->ximage->width,
-                winstate->ximage->height
-        );
-        XPutImage(
-                display,
-                winstate->image_window,
-                winstate->gc,
-                winstate->ximage,
-                max(0, -top_left_x),
-                max(0, -top_left_y),
-                max(0, -top_left_x),
-                max(0, -top_left_y),
-                im_width,
-                im_height
-        );
+        if (winstate->changes & TEXT || force_redraw) {
+                XMoveResizeWindow(
+                        display,
+                        winstate->text_window,
+                        0, winstate->window_height - text_height,
+                        winstate->window_width, text_height
+                );
+                XClearWindow(display, winstate->text_window);
+                strcpy(str, sbimg_files_curr(&winstate->files));
+                sbimg_textbox_write(
+                        &winstate->textbox,
+                        text_height, 0,
+                        basename(str)
+                );
+                sprintf(
+                        str,
+                        "[%d/%d]",
+                        winstate->files.idx + 1,
+                        winstate->files.file_count
+                );
+                sbimg_textbox_write(
+                        &winstate->textbox,
+                        text_height, winstate->window_width,
+                        str
+                );
+        }
 
-        XClearWindow(display, winstate->text_window);
-        XMoveResizeWindow(
-                display,
-                winstate->text_window,
-                0, winstate->window_height - winstate->text_height,
-                winstate->window_width, winstate->text_height
-        );
-        strcpy(str, sbimg_files_curr(&winstate->files));
-        sbimg_textbox_write(
-                &winstate->textbox,
-                winstate->text_height, 0,
-                basename(str)
-        );
-        sprintf(
-                str,
-                "[%d/%d]",
-                winstate->files.idx + 1,
-                winstate->files.file_count
-        );
-        sbimg_textbox_write(
-                &winstate->textbox,
-                winstate->text_height, winstate->window_width,
-                str
-        );
+        winstate->changes = 0;
 }

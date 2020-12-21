@@ -8,7 +8,7 @@ struct sbimg_winstate {
         XImage *ximage;
         GC gc;
         Window window, image_window, text_window;
-        int window_width, window_height, center_x, center_y, text_height;
+        int window_width, window_height, center_x, center_y, changes;
         double zoom;
 };
 
@@ -32,6 +32,6 @@ void sbimg_winstate_next_image(struct sbimg_winstate *winstate);
 void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y);
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, double zoom_amt);
 
-void sbimg_winstate_redraw(struct sbimg_winstate *winstate);
+void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw);
 
 #endif
