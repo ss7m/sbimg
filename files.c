@@ -47,11 +47,20 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
 
         files->file_count = 0;
         while ((entry = readdir(directory)) != NULL) {
-                if (!sbimg_is_file(entry->d_name)) {
-                        continue;
-                } else if (!sbimg_has_image_ext(entry->d_name)) {
+                char *str;
+
+                if (!sbimg_has_image_ext(entry->d_name)) {
                         continue;
                 }
+                str = malloc(
+                        sizeof(char) * (2 + strlen(entry->d_name) + strlen(dir_name))
+                );
+                sprintf(str, "%s/%s", dir_name, entry->d_name);
+                if (!sbimg_is_file(str)) {
+                        free(str);
+                        continue;
+                }
+                free(str);
                 files->file_count += 1;
         }
 
@@ -60,16 +69,17 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         files->idx = -1;
         i = 0;
         while ((entry = readdir(directory)) != NULL) {
-                if (!sbimg_is_file(entry->d_name)) {
-                        continue;
-                } else if (!sbimg_has_image_ext(entry->d_name)) {
+                if (!sbimg_has_image_ext(entry->d_name)) {
                         continue;
                 }
 
                 files->files[i] = malloc(sizeof(char)
-                                * (3 + strlen(entry->d_name) + strlen(dir_name)));
+                                * (2 + strlen(entry->d_name) + strlen(dir_name)));
                 sprintf(files->files[i], "%s/%s", dir_name, entry->d_name);
-                if (strcmp(file_name, entry->d_name) == 0) {
+                if (!sbimg_is_file(files->files[i])) {
+                        free(files->files[i]);
+                        continue;
+                } else if (strcmp(file_name, entry->d_name) == 0) {
                         file_name = files->files[i];
                 }
                 i += 1;
@@ -79,7 +89,7 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         i = 0;
         do {
                 if (i >= files->file_count) {
-                        sbimg_error("%s not a file or has wrong extension\n");
+                        sbimg_error("%s not a file or has wrong extension\n", file_name);
                 }
         } while (strcmp(file_name, files->files[i++]) != 0);
         files->idx = i - 1;
