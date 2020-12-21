@@ -9,6 +9,7 @@ struct sbimg_winstate {
         Pixmap pixmap;
         GC gc;
         Window window, image_window, text_window;
+        Picture window_picture, image_picture;
         int window_width, window_height, center_x, center_y, changes;
         double zoom;
 };
