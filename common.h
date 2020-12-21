@@ -7,11 +7,15 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
+#include <libgen.h>
+
+#include <X11/Xlib.h>
 
 #define DEBUG_BOOL(b) printf("%s\n", (b) ? "true" : "false")
 #define true 1
 #define false 0
 
+extern Display *display;
 void sbimg_error(char *format, ...);
 
 #endif

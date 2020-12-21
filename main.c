@@ -1,7 +1,8 @@
 #include "common.h"
 #include "image.h"
+#include "fonts.h"
+#include "files.h"
 
-#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
 #define ZOOM_AMT 1.1
@@ -54,16 +55,24 @@ XImage *sbimg_create_ximage(struct sbimg_image *image, double zoom) {
         return ximage;
 }
 
-int main(void) {
-        int window_width, window_height, center_x, center_y;
+int main(int argc, char **argv) {
+        int window_width, window_height, center_x, center_y, text_height;
         double zoom = 1.0;
         struct sbimg_image image;
+        struct sbimg_textbox textbox;
+        struct sbimg_files files;
         XImage *ximage;
         GC gc;
-        Window window, image_window;
+        Atom delete_message;
+        Window window, image_window, text_window;
+
+        if (argc != 2) {
+                sbimg_error("Please pass exactly 1 argument\n");
+        }
+        sbimg_files_init(&files, argv[1]);
 
         display = XOpenDisplay(NULL);
-        sbimg_image_init(&image, "/home/sam-barr/Pictures/bliss.png");
+        sbimg_image_init(&image, sbimg_files_curr(&files));
         ximage = sbimg_create_ximage(&image, zoom);
         window_width = ximage->width;
         window_height = ximage->height;
@@ -79,6 +88,16 @@ int main(void) {
                 WhitePixel(display, DefaultScreen(display)), /* border color */
                 WhitePixel(display, DefaultScreen(display)) /* background color */
         );
+        XSelectInput(
+                display,
+                window,
+                KeyPressMask | StructureNotifyMask | ExposureMask
+        );
+        XMapWindow(display, window);
+        delete_message = XInternAtom(display, "WM_DELETE_WINDOW", false);
+        XSetWMProtocols(display, window, &delete_message, 1);
+        gc = XCreateGC(display, window, 0, NULL);
+
         image_window = XCreateSimpleWindow(
                 display,
                 window,
@@ -89,14 +108,23 @@ int main(void) {
                 WhitePixel(display, DefaultScreen(display)), /* border color */
                 WhitePixel(display, DefaultScreen(display)) /* background color */
         );
-        XSelectInput(
+        XMapWindow(display, image_window);
+
+        text_window = XCreateSimpleWindow(
                 display,
                 window,
-                KeyPressMask | StructureNotifyMask | ExposureMask
+                0, 0, 1, 1, 0,
+                BlackPixel(display, DefaultScreen(display)),
+                BlackPixel(display, DefaultScreen(display))
         );
-        XMapWindow(display, window);
-        XMapWindow(display, image_window);
-        gc = XCreateGC(display, window, 0, NULL);
+        sbimg_textbox_init(
+                &textbox,
+                text_window,
+                "Hasklug Nerd Font",
+                10.0
+        );
+        XMapWindow(display, text_window);
+        text_height = sbimg_textbox_font_height(&textbox) * 1.5;
 
         for(;;) {
                 int redraw = false;
@@ -147,12 +175,31 @@ int main(void) {
                         redraw = true;
 
                         break;
+                case ClientMessage:
+                        if ((Atom)e.xclient.data.l[0] == delete_message) {
+                                goto cleanup;
+                        }
+                        break;
                 case KeyPress:
                         switch (XLookupKeysym(&e.xkey, 0)) {
                         case XK_q:
                                 goto cleanup;
                         case XK_h:
-                                center_x -= MOVE_AMT;
+                                if (e.xkey.state & ShiftMask) {
+                                        zoom = 1.0;
+                                        center_x = window_width / 2;
+                                        center_y = window_height / 2;
+                                        sbimg_files_prev(&files);
+                                        XDestroyImage(ximage);
+                                        sbimg_image_destroy(&image);
+                                        sbimg_image_init(
+                                                &image,
+                                                sbimg_files_curr(&files)
+                                        );
+                                        ximage = sbimg_create_ximage(&image, zoom);
+                                } else {
+                                        center_x -= MOVE_AMT;
+                                }
                                 break;
                         case XK_j:
                                 if (e.xkey.state & ShiftMask) {
@@ -165,7 +212,7 @@ int main(void) {
                                 break;
                         case XK_k:
                                 if (e.xkey.state & ShiftMask) {
-                                        zoom*= ZOOM_AMT;
+                                        zoom *= ZOOM_AMT;
                                         XDestroyImage(ximage);
                                         ximage = sbimg_create_ximage(&image, zoom);
                                 } else {
@@ -173,13 +220,28 @@ int main(void) {
                                 }
                                 break;
                         case XK_l:
-                                center_x += MOVE_AMT;
+                                if (e.xkey.state & ShiftMask) {
+                                        zoom = 1.0;
+                                        center_x = window_width / 2;
+                                        center_y = window_height / 2;
+                                        sbimg_files_next(&files);
+                                        XDestroyImage(ximage);
+                                        sbimg_image_destroy(&image);
+                                        sbimg_image_init(
+                                                &image,
+                                                sbimg_files_curr(&files)
+                                        );
+                                        ximage = sbimg_create_ximage(&image, zoom);
+                                } else {
+                                        center_x += MOVE_AMT;
+                                }
                                 break;
                         }
                         redraw = true;
                 }
 
                 if (redraw) {
+                        char str[1024] = {0};
                         int top_left_x, top_left_y, im_width, im_height;
 
                         top_left_x = center_x - ximage->width / 2;
@@ -210,17 +272,46 @@ int main(void) {
                                 im_width,
                                 im_height
                         );
+
+                        XClearWindow(display, text_window);
+                        XMoveResizeWindow(
+                                display,
+                                text_window,
+                                0, window_height - text_height,
+                                window_width, text_height
+                        );
+                        strcpy(str, sbimg_files_curr(&files));
+                        sbimg_textbox_write(
+                                &textbox,
+                                text_height, 0,
+                                basename(str)
+                        );
+                        sprintf(
+                                str,
+                                "[%d/%d]",
+                                files.idx + 1,
+                                files.file_count
+                        );
+                        sbimg_textbox_write(
+                                &textbox,
+                                text_height, window_width,
+                                str
+                        );
                 }
         }
 
 cleanup:
+        sbimg_files_destroy(&files);
         XDestroyImage(ximage);
         sbimg_image_destroy(&image);
+        sbimg_textbox_destroy(&textbox);
         XFreeGC(display, gc);
         XDestroyWindow(display, image_window);
+        XDestroyWindow(display, text_window);
         XDestroyWindow(display, window);
         XCloseDisplay(display);
         return EXIT_SUCCESS;
 }
 
 /* 18,612 in use at exit from xft */
+/* 214,512 in use at exit from xft */
