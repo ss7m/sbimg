@@ -4,19 +4,19 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-int sbimg_is_file(char *file_name) {
+static int sbimg_is_file(char *file_name) {
         struct stat file_stat;
         stat(file_name, &file_stat);
         return S_ISREG(file_stat.st_mode);
 }
 
-int sbimg_string_cmp(const void *a, const void *b) {
+static int sbimg_string_cmp(const void *a, const void *b) {
         char *sa = *(char **)a;
         char *sb = *(char **)b;
         return strcmp(sa, sb);
 }
 
-int sbimg_has_image_ext(char *file_name) {
+static int sbimg_has_image_ext(char *file_name) {
         char *ext = strrchr(file_name, '.');
         if (ext == NULL) {
                 return false;

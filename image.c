@@ -19,7 +19,7 @@ struct sbimg_png_reader {
  * Reads the first 8 bytes and checks them against the magic png header
  * Should probably be followed with a call to "png_set_sig_bytes"
  */
-int sbimg_check_if_png(FILE *file) {
+static int sbimg_check_if_png(FILE *file) {
         uint8_t bytes[PNG_SIG_LENGTH];
         fread(bytes, sizeof(uint8_t), PNG_SIG_LENGTH, file);
         return png_sig_cmp(bytes, 0, PNG_SIG_LENGTH) == 0;
@@ -29,7 +29,10 @@ int sbimg_check_if_png(FILE *file) {
  * struct sbimg_png reading functions
  */
 
-void sbimg_png_reader_init(struct sbimg_png_reader *reader, const char *file_name) {
+static void sbimg_png_reader_init(
+        struct sbimg_png_reader *reader,
+        const char *file_name)
+{
         png_struct *png;
         png_info *info;
         FILE *file;
@@ -66,14 +69,18 @@ void sbimg_png_reader_init(struct sbimg_png_reader *reader, const char *file_nam
         fclose(file);
 }
 
-void sbimg_png_reader_destroy(struct sbimg_png_reader *reader) {
+static void sbimg_png_reader_destroy(struct sbimg_png_reader *reader) {
         png_destroy_read_struct(&reader->png, &reader->info, NULL);
 }
 
 /*
  * Load an image from a png reader
  */
-void sbimg_png_reader_load_image(struct sbimg_png_reader *reader, struct sbimg_image *image) {
+static void sbimg_png_reader_load_image(
+        struct sbimg_png_reader *reader,
+        struct sbimg_image
+        *image)
+{
         size_t i, row_size;
         uint8_t **image_rows;
 
