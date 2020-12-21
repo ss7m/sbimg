@@ -5,9 +5,9 @@ LIBS=libpng x11 xft
 CFLAGS=-Wall -Wextra -Wpedantic -std=c90 -pedantic \
 	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done)
 
-SRCS=main.c image.c fonts.c files.c
+SRCS=main.c image.c fonts.c files.c window.c
 OBJS=$(SRCS:.c=.o)
-HDRS=common.h image.h fonts.h files.h
+HDRS=common.h image.h fonts.h files.h window.h
 EXE=sbimg
 
 #

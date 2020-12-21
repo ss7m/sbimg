@@ -12,7 +12,7 @@ struct sbimg_textbox {
 void sbimg_textbox_init(
         struct sbimg_textbox *textbox,
         Window window,
-        char *font_string,
+        const char *font_string,
         double font_size
 );
 void sbimg_textbox_destroy(struct sbimg_textbox *textbox);

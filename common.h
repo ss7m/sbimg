@@ -15,6 +15,10 @@
 #define true 1
 #define false 0
 
+#define maprange(s, a1, a2, b1, b2) ((b1) + ((s) - (a1)) * ((b2)-(b1)) / ((a2 - a1)))
+#define min(a,b) (((a) > (b)) ? (b) : (a))
+#define max(a,b) (((a) < (b)) ? (b) : (a))
+
 extern Display *display;
 void sbimg_error(char *format, ...);
 
