@@ -6,6 +6,7 @@ struct sbimg_winstate {
         struct sbimg_textbox textbox;
         struct sbimg_files files;
         XImage *ximage;
+        Pixmap pixmap;
         GC gc;
         Window window, image_window, text_window;
         int window_width, window_height, center_x, center_y, changes;

@@ -71,6 +71,7 @@ void sbimg_winstate_destroy(struct sbimg_winstate *winstate) {
         sbimg_files_destroy(&winstate->files);
         XDestroyImage(winstate->ximage);
         XFreeGC(display, winstate->gc);
+        XFreePixmap(display, winstate->pixmap);
         XDestroyWindow(display, winstate->image_window);
         XDestroyWindow(display, winstate->text_window);
         XDestroyWindow(display, winstate->window);
@@ -112,6 +113,12 @@ void sbimg_winstate_init(
                 WhitePixel(display, DefaultScreen(display))
         );
         XMapWindow(display, winstate->image_window);
+        winstate->pixmap = XCreatePixmap(
+                display,
+                winstate->image_window,
+                1, 1, /* default dummy values */
+                DefaultDepth(display, DefaultScreen(display))
+        );
 
         winstate->text_window = XCreateSimpleWindow(
                 display,
@@ -207,6 +214,7 @@ void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
         text_height = txth(winstate);
 
         if (winstate->changes & IMAGE || force_redraw) {
+                XFreePixmap(display, winstate->pixmap);
                 XMoveResizeWindow(
                         display,
                         winstate->image_window,
@@ -215,9 +223,16 @@ void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
                         winstate->ximage->width,
                         winstate->ximage->height
                 );
-                XPutImage(
+                winstate->pixmap = XCreatePixmap(
                         display,
                         winstate->image_window,
+                        winstate->ximage->width,
+                        winstate->ximage->height,
+                        DefaultDepth(display, DefaultScreen(display))
+                );
+                XPutImage(
+                        display,
+                        winstate->pixmap,
                         winstate->gc,
                         winstate->ximage,
                         max(0, -top_left_x),
@@ -226,6 +241,16 @@ void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
                         max(0, -top_left_y),
                         im_width,
                         im_height
+                );
+                XCopyArea(
+                        display,
+                        winstate->pixmap,
+                        winstate->image_window,
+                        winstate->gc,
+                        0, 0,
+                        winstate->ximage->width,
+                        winstate->ximage->height,
+                        0, 0
                 );
         }
 
