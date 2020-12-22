@@ -36,6 +36,7 @@ static void sbimg_png_reader_init(
         png_struct *png;
         png_info *info;
         FILE *file;
+        png_color_16 background;
 
         png = png_create_read_struct(SBIMG_PNG_VERSION, NULL, NULL, NULL);
         if (png == NULL) {
@@ -54,15 +55,18 @@ static void sbimg_png_reader_init(
                 sbimg_error("File %s is not a png file\n", file_name);
         }
 
+        background.red = background.green = background.blue = 0xFF;
+        png_set_background(png, &background, PNG_BACKGROUND_GAMMA_SCREEN, 0, 2.2);
         png_init_io(png, file);
-        png_set_sig_bytes(png, PNG_SIG_LENGTH);
+        png_set_sig_bytes(png,PNG_SIG_LENGTH);
         png_read_png(
                 png, info,
                 PNG_TRANSFORM_STRIP_16 |
                 PNG_TRANSFORM_PACKING |
                 PNG_TRANSFORM_GRAY_TO_RGB |
                 PNG_TRANSFORM_STRIP_ALPHA,
-                NULL);
+                NULL
+        );
 
         reader->png = png;
         reader->info = info;
