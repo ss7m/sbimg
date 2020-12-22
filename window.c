@@ -60,6 +60,16 @@ static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
                         );
                 }
         }
+
+        XPutImage(
+                display,
+                winstate->pixmap,
+                winstate->gc,
+                winstate->ximage,
+                0, 0, 0, 0,
+                winstate->ximage->width,
+                winstate->ximage->height
+        );
 }
 
 static void sbimg_winstate_apply_transform(struct sbimg_winstate *winstate) {
@@ -230,15 +240,6 @@ void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
                         tly(winstate),
                         winstate->zoom * winstate->ximage->width,
                         winstate->zoom * winstate->ximage->height
-                );
-                XPutImage(
-                        display,
-                        winstate->pixmap,
-                        winstate->gc,
-                        winstate->ximage,
-                        0, 0, 0, 0,
-                        winstate->ximage->width,
-                        winstate->ximage->height
                 );
                 XRenderComposite(
                         display,
