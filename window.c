@@ -4,9 +4,14 @@
 #include "files.h"
 #include "window.h"
 
-#define tlx(w) ((w)->center_x - (w)->ximage->width / 2)
-#define tly(w) ((w)->center_y - (w)->ximage->height / 2)
-#define txth(w) (sbimg_textbox_font_height(&w->textbox) * 1.5)
+#include <math.h>
+
+#define tlx(w) ((w)->center_x - (w)->zoom * (w)->ximage->width / 2)
+#define tly(w) ((w)->center_y - (w)->zoom * (w)->ximage->height / 2)
+#define txth(w) (sbimg_textbox_font_height(&w->textbox) * 1.1)
+
+#define ZOOM_AMT 1.1
+#define MOVE_PCT 0.01
 
 enum {
         TEXT = (1 << 0),
@@ -40,7 +45,7 @@ static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
         winstate->image_picture = XRenderCreatePicture(
                 display,
                 winstate->pixmap,
-                XRenderFindVisualFormat( /* TODO copyfromparent? */
+                XRenderFindVisualFormat(
                         display,
                         DefaultVisual(display, DefaultScreen(display))
                 ),
@@ -225,13 +230,13 @@ void sbimg_winstate_next_image(struct sbimg_winstate *winstate) {
 
 void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y) {
         winstate->changes |= IMAGE;
-        winstate->center_x += x;
-        winstate->center_y += y;
+        winstate->center_x += x * winstate->ximage->width * winstate->zoom * MOVE_PCT;
+        winstate->center_y += y * winstate->ximage->height * winstate->zoom * MOVE_PCT;
 }
 
-void sbimg_winstate_zoom(struct sbimg_winstate *winstate, double zoom_amt) {
+void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p) {
         winstate->changes |= IMAGE;
-        winstate->zoom *= zoom_amt;
+        winstate->zoom *= pow(ZOOM_AMT, p);
         sbimg_winstate_apply_transform(winstate);
 }
 

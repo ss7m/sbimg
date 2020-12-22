@@ -4,8 +4,6 @@
 #include "files.h"
 #include "window.h"
 
-#define ZOOM_AMT 1.1
-#define MOVE_AMT 10
 
 Display *display;
 
@@ -99,30 +97,30 @@ int main(int argc, char **argv) {
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate, 
-                                                -MOVE_AMT,
+                                                -1,
                                                 0
                                         );
                                 }
                                 break;
                         case XK_j:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_zoom(&winstate, 1/ZOOM_AMT);
+                                        sbimg_winstate_zoom(&winstate, -1);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
                                                 0,
-                                                MOVE_AMT
+                                                1
                                         );
                                 }
                                 break;
                         case XK_k:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_zoom(&winstate, ZOOM_AMT);
+                                        sbimg_winstate_zoom(&winstate, 1);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
                                                 0,
-                                                -MOVE_AMT
+                                                -1
                                         );
                                 }
                                 break;
@@ -132,7 +130,7 @@ int main(int argc, char **argv) {
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
-                                                MOVE_AMT,
+                                                1,
                                                 0
                                         );
                                 }
