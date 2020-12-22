@@ -99,14 +99,14 @@ void sbimg_winstate_init(
         const char *font_string,
         double font_size)
 {
+        XWindowAttributes attributes;
+
         winstate->files = *files;
         winstate->changes = 0;
         winstate->zoom = 1.0;
         sbimg_image_init(&winstate->image, sbimg_files_curr(files));
         winstate->window_width = winstate->image.width;
         winstate->window_height = winstate->image.height;
-        winstate->center_x = winstate->image.width / 2;
-        winstate->center_y = winstate->image.height / 2;
 
         winstate->window = XCreateSimpleWindow(
                 display,
@@ -131,7 +131,7 @@ void sbimg_winstate_init(
         winstate->window_picture = XRenderCreatePicture(
                 display,
                 winstate->image_window,
-                XRenderFindVisualFormat( /* TODO copyfromparent? */
+                XRenderFindVisualFormat(
                         display,
                         DefaultVisual(display, DefaultScreen(display))
                 ),
@@ -154,7 +154,16 @@ void sbimg_winstate_init(
                 font_string,
                 font_size
         );
-}
+
+        /* 
+         * Window manager may resize the window after creation,
+         * and I don't seem to get a configurenotify event for this
+         */
+        XGetWindowAttributes(display, winstate->window, &attributes);
+        winstate->window_width = attributes.width;
+        winstate->window_height = attributes.height;
+        winstate->center_x = attributes.width / 2;
+        winstate->center_y = attributes.height / 2; }
 
 void sbimg_winstate_set_dimensions(
         struct sbimg_winstate *winstate,
