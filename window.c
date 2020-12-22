@@ -22,6 +22,7 @@ static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
         size_t x, y;
         char *data;
 
+        /* Xlib has every pixel take up 4 bytes??? idk tbh */
         data = malloc(sizeof(char) * winstate->image.width * winstate->image.height * 4);
         winstate->ximage = XCreateImage(
                 display,
@@ -78,7 +79,6 @@ static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
 }
 
 static void sbimg_winstate_apply_transform(struct sbimg_winstate *winstate) {
-        /* Xlib has every pixel take up 4 bytes??? idk tbh */
         XTransform transform = {0};
         transform.matrix[0][0] = XDoubleToFixed(1/winstate->zoom);
         transform.matrix[1][1] = XDoubleToFixed(1/winstate->zoom);
@@ -192,31 +192,13 @@ void sbimg_winstate_set_dimensions(
         winstate->window_height = height;
 }
 
-void sbimg_winstate_prev_image(struct sbimg_winstate *winstate) {
+void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num) {
         winstate->changes |= IMAGE;
         winstate->changes |= TEXT;
         winstate->zoom = 1.0;
         winstate->center_x = winstate->window_width / 2;
         winstate->center_y = winstate->window_height / 2;
-        sbimg_files_prev(&winstate->files);
-        XFreePixmap(display, winstate->pixmap);
-        XDestroyImage(winstate->ximage);
-        sbimg_image_destroy(&winstate->image);
-        sbimg_image_init(
-                &winstate->image,
-                sbimg_files_curr(&winstate->files)
-        );
-        sbimg_winstate_gen_ximage(winstate);
-        sbimg_winstate_apply_transform(winstate);
-}
-
-void sbimg_winstate_next_image(struct sbimg_winstate *winstate) {
-        winstate->changes |= IMAGE;
-        winstate->changes |= TEXT;
-        winstate->zoom = 1.0;
-        winstate->center_x = winstate->window_width / 2;
-        winstate->center_y = winstate->window_height / 2;
-        sbimg_files_next(&winstate->files);
+        sbimg_files_shift(&winstate->files, num);
         XFreePixmap(display, winstate->pixmap);
         XDestroyImage(winstate->ximage);
         sbimg_image_destroy(&winstate->image);

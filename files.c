@@ -45,6 +45,7 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         directory = opendir(dir_name);
         file_name = basename(file_name);
 
+        /* count image files in the directory */
         files->file_count = 0;
         while ((entry = readdir(directory)) != NULL) {
                 char *str;
@@ -64,6 +65,7 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
                 files->file_count += 1;
         }
 
+        /* collect the names of the image files */
         files->files = malloc(sizeof(char *) * files->file_count);
         rewinddir(directory);
         files->idx = -1;
@@ -80,12 +82,16 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
                         free(files->files[i]);
                         continue;
                 } else if (strcmp(file_name, entry->d_name) == 0) {
+                        /* get full path of file_name so that we can look it up later */
                         file_name = files->files[i];
                 }
                 i += 1;
         }
+
+        /* sort alphabetically */
         qsort(files->files, files->file_count, sizeof(char *), sbimg_string_cmp);
 
+        /* look up idx of file_name */
         i = 0;
         do {
                 if (i >= files->file_count) {
@@ -98,16 +104,9 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         free(directory);
 }
 
-void sbimg_files_prev(struct sbimg_files *files) {
-        if (files->idx == 0) {
-                return;
-        }
-        files->idx -= 1;
-}
-
-void sbimg_files_next(struct sbimg_files *files) {
-        if (files->idx == files->file_count - 1) {
-                return;
-        }
-        files->idx += 1;
+void sbimg_files_shift(struct sbimg_files *files, int num) {
+        files->idx = min(
+                files->file_count - 1,
+                max(0, files->idx + num)
+        );
 }

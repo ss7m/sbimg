@@ -28,8 +28,7 @@ void sbimg_winstate_set_dimensions(
         int height
 );
 
-void sbimg_winstate_prev_image(struct sbimg_winstate *winstate);
-void sbimg_winstate_next_image(struct sbimg_winstate *winstate);
+void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num);
 
 void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y);
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p);

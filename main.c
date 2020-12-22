@@ -28,28 +28,30 @@ int main(int argc, char **argv) {
         Atom delete_message;
 
         if (argc != 2 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-                printf("Usage: sbimg [file]\n");
-                printf("\nA simple X image viewer\n\n");
-                printf("Options:\n");
-                printf("  -h, --help     print this message and exit\n");
-                printf("\n");
-                printf("Controls:\n");
-                printf("  q              quit program\n");
-                printf("  h              move image left\n");
-                printf("  j              move image down\n");
-                printf("  k              move image up\n");
-                printf("  l              move image right\n");
-                printf("  H              go to previous image\n");
-                printf("  J              zoom out\n");
-                printf("  K              zoom in\n");
-                printf("  L              go to next image\n");
-                printf("\n");
+                printf(
+                        "Usage: sbimg [file]\n"
+                        "\nA simple X image viewer\n\n"
+                        "Options:\n"
+                        "  -h, --help     print this message and exit\n"
+                        "\n"
+                        "Controls:\n"
+                        "  q              quit program\n"
+                        "  h              move image left\n"
+                        "  j              move image down\n"
+                        "  k              move image up\n"
+                        "  l              move image right\n"
+                        "  H              go to previous image\n"
+                        "  J              zoom out\n"
+                        "  K              zoom in\n"
+                        "  L              go to next image\n"
+                        "\n"
+                );
                 exit(EXIT_FAILURE);
         }
 
         last_move.tv_sec = last_move.tv_nsec = -1;
-
         display = XOpenDisplay(NULL);
+
         {
                 struct sbimg_files files;
                 sbimg_files_init(&files, argv[1]);
@@ -118,6 +120,7 @@ int main(int argc, char **argv) {
                         }
                         break;
                 case KeyPress:
+                        /* limit movement on held key presses with timeouts */
                         if(timespec_diff(&curr_time, &last_move) < MOVE_TIMEOUT) {
                                 break;
                         } else {
@@ -128,7 +131,7 @@ int main(int argc, char **argv) {
                                 goto cleanup;
                         case XK_h:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_prev_image(&winstate);
+                                        sbimg_winstate_shift_file(&winstate, -1);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate, 
@@ -161,7 +164,7 @@ int main(int argc, char **argv) {
                                 break;
                         case XK_l:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_next_image(&winstate);
+                                        sbimg_winstate_shift_file(&winstate, 1);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
