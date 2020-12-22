@@ -43,6 +43,7 @@ int main(int argc, char **argv) {
         );
         delete_message = XInternAtom(display, "WM_DELETE_WINDOW", false);
         XSetWMProtocols(display, winstate.window, &delete_message, 1);
+        sbimg_winstate_redraw(&winstate, true);
 
         for(;;) {
                 int force_redraw = false;
