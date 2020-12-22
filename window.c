@@ -212,13 +212,21 @@ void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num) {
 
 void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y) {
         winstate->changes |= IMAGE;
-        winstate->center_x += x * winstate->ximage->width * winstate->zoom * MOVE_PCT;
-        winstate->center_y += y * winstate->ximage->height * winstate->zoom * MOVE_PCT;
+        winstate->center_x +=
+                min(winstate->window_width, winstate->ximage->width)
+                * x * winstate->zoom * MOVE_PCT;
+        winstate->center_y +=
+                min(winstate->window_height, winstate->ximage->height)
+                * y * winstate->zoom * MOVE_PCT;
 }
 
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p) {
         winstate->changes |= IMAGE;
         winstate->zoom *= pow(ZOOM_AMT, p);
+        winstate->center_x = winstate->window_width / 2
+                + pow(ZOOM_AMT, p) * (winstate->center_x - winstate->window_width / 2);
+        winstate->center_y = winstate->window_height / 2
+                + pow(ZOOM_AMT, p) * (winstate->center_y - winstate->window_height / 2);
         sbimg_winstate_apply_transform(winstate);
 }
 

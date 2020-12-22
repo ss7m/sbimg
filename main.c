@@ -6,7 +6,7 @@
 
 Display *display;
 
-#define MOVE_TIMEOUT 100000000L
+#define MOVE_TIMEOUT 60000000L
 
 long timespec_diff(struct timespec *x, struct timespec *y) {
         long xnsec = x->tv_sec * 1e9 + x->tv_nsec;
