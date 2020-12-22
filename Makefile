@@ -3,7 +3,8 @@ INSTALL_DIR=$(HOME)/.local/bin
 LIBS=libpng x11 xft xrender
 
 CFLAGS=-Wall -Wextra -Wpedantic -std=c90 -pedantic -lm \
-	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done)
+	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done) \
+	   -D_POSIX_C_SOURCE=199309L
 
 SRCS=main.c image.c fonts.c files.c window.c
 OBJS=$(SRCS:.c=.o)

@@ -4,8 +4,15 @@
 #include "files.h"
 #include "window.h"
 
-
 Display *display;
+
+#define MOVE_TIMEOUT 100000000L
+
+long timespec_diff(struct timespec *x, struct timespec *y) {
+        long xnsec = x->tv_sec * 1e9 + x->tv_nsec;
+        long ynsec = y->tv_sec * 1e9 + y->tv_nsec;
+        return xnsec - ynsec;
+}
 
 void sbimg_error(char *format, ...) {
         va_list ap;
@@ -17,7 +24,10 @@ void sbimg_error(char *format, ...) {
 
 int main(int argc, char **argv) {
         struct sbimg_winstate winstate;
+        struct timespec last_move;
         Atom delete_message;
+
+        last_move.tv_sec = last_move.tv_nsec = -1;
 
         display = XOpenDisplay(NULL);
         {
@@ -44,6 +54,7 @@ int main(int argc, char **argv) {
         sbimg_winstate_redraw(&winstate, true);
 
         for(;;) {
+                struct timespec curr_time;
                 int force_redraw = false;
                 XEvent e;
 
@@ -52,6 +63,8 @@ int main(int argc, char **argv) {
                         int discard = false;
                         XEvent ne;
                         XNextEvent(display, &e);
+                        clock_gettime(CLOCK_REALTIME, &curr_time);
+
                         if (XEventsQueued(display, QueuedAlready) == 0) {
                                 break;
                         }
@@ -88,6 +101,11 @@ int main(int argc, char **argv) {
                         }
                         break;
                 case KeyPress:
+                        if(timespec_diff(&curr_time, &last_move) < MOVE_TIMEOUT) {
+                                break;
+                        } else {
+                                last_move = curr_time;
+                        }
                         switch (XLookupKeysym(&e.xkey, 0)) {
                         case XK_q:
                                 goto cleanup;

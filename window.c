@@ -10,8 +10,8 @@
 #define tly(w) ((w)->center_y - (w)->zoom * (w)->ximage->height / 2)
 #define txth(w) (sbimg_textbox_font_height(&w->textbox) * 1.1)
 
-#define ZOOM_AMT 1.1
-#define MOVE_PCT 0.01
+#define ZOOM_AMT 1.2
+#define MOVE_PCT 0.03
 
 enum {
         TEXT = (1 << 0),
