@@ -7,9 +7,11 @@
 #define SBIMG_PNG_VERSION "1.6.37"
 #define PNG_SIG_LENGTH 8
 
-#define sbimg_image_row_size(image) (image->width * 3 * sizeof(uint8_t))
-#define sbimg_image_xy(image, x, y) ((y) * image->width * 3 * sizeof(uint8_t) \
-                        + (x) * 3 * sizeof(uint8_t))
+#define sbimg_image_num_components(image) ((image)->pixel_type == SBIMG_GRAY ? 1 : 3)
+#define sbimg_image_row_size(image) ((image)->width \
+                * sbimg_image_num_components(image) * sizeof(uint8_t))
+#define sbimg_image_xy(image, x, y) ((y) * sbimg_image_row_size(image) \
+                + (x) * sbimg_image_num_components(image) * sizeof(uint8_t))
 
 enum sbimg_image_type sbimg_parse_file_ext(const char *file_name) {
         char *ext = strrchr(file_name, '.');
@@ -29,7 +31,7 @@ enum sbimg_image_type sbimg_parse_file_ext(const char *file_name) {
 
 /* Reading a JPG file */
 
-void sbimg_read_jpg_file(struct sbimg_image *image, const char *file_name) {
+static void sbimg_read_jpg_file(struct sbimg_image *image, const char *file_name) {
         FILE *file;
         struct jpeg_decompress_struct cinfo;
         struct jpeg_error_mgr jerror;
@@ -50,6 +52,7 @@ void sbimg_read_jpg_file(struct sbimg_image *image, const char *file_name) {
         image->data = malloc(row_size * cinfo.output_height);
         image->width = cinfo.output_width;
         image->height = cinfo.output_height;
+        image->pixel_type = cinfo.output_components == 1 ? SBIMG_GRAY : SBIMG_RGB;
         buffer = cinfo.mem->alloc_sarray(
                 (j_common_ptr) &cinfo,
                 JPOOL_IMAGE,
@@ -71,8 +74,7 @@ void sbimg_read_jpg_file(struct sbimg_image *image, const char *file_name) {
 
 struct sbimg_png_reader {
         png_struct *png;
-        png_info *info;
-};
+        png_info *info; };
 
 /*
  * Reads the first 8 bytes and checks them against the magic png header
@@ -141,14 +143,14 @@ static void sbimg_png_reader_destroy(struct sbimg_png_reader *reader) {
  */
 static void sbimg_png_reader_load_image(
         struct sbimg_png_reader *reader,
-        struct sbimg_image
-        *image)
+        struct sbimg_image *image)
 {
         size_t i, row_size;
         uint8_t **image_rows;
 
         image->width = png_get_image_width(reader->png, reader->info);
         image->height = png_get_image_height(reader->png, reader->info);
+        image->pixel_type = SBIMG_RGB;
         row_size = sbimg_image_row_size(image);
         image->data = malloc(row_size * image->height);
 
@@ -184,19 +186,15 @@ void sbimg_image_destroy(struct sbimg_image *image) {
 
 struct sbimg_pixel sbimg_image_get_pixel(struct sbimg_image *image, size_t x, size_t y) {
         struct sbimg_pixel pixel;
-        pixel.r = image->data[sbimg_image_xy(image, x, y)];
-        pixel.g = image->data[sbimg_image_xy(image, x, y) + 1];
-        pixel.b = image->data[sbimg_image_xy(image, x, y) + 2];
+        switch (image->pixel_type) {
+        case SBIMG_RGB:
+                pixel.r = image->data[sbimg_image_xy(image, x, y)];
+                pixel.g = image->data[sbimg_image_xy(image, x, y) + 1];
+                pixel.b = image->data[sbimg_image_xy(image, x, y) + 2];
+                break;
+        case SBIMG_GRAY:
+                pixel.r = pixel.g = pixel.b = image->data[sbimg_image_xy(image, x, y)];
+                break;
+        }
         return pixel;
-}
-
-void sbimg_image_set_pixel(
-        struct sbimg_image *image,
-        struct sbimg_pixel pixel,
-        size_t x,
-        size_t y)
-{
-        image->data[sbimg_image_xy(image, x, y)]     = pixel.r;
-        image->data[sbimg_image_xy(image, x, y) + 1] = pixel.g;
-        image->data[sbimg_image_xy(image, x, y) + 2] = pixel.b;
 }
