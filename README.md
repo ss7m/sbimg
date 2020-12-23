@@ -1,8 +1,8 @@
 # sbimg
 
-A simple image viewer for X. Currently only supports png files, hopefully
-will support more image types in the near future. Takes a single file as input,
-and allows you to navigate through all of the images in the folder containing that file.
+A simple image viewer for X. Currently supports png and jpg image files.
+Takes a single file as input, and allows you to navigate through all of the
+images in the folder containing that file.
 
 ## Installation
 To build:
