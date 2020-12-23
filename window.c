@@ -232,9 +232,7 @@ void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p) {
 
 void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
         char str[1024] = {0};
-        int text_height;
-
-        text_height = txth(winstate);
+        int text_height = txth(winstate);
 
         if (winstate->changes & IMAGE || force_redraw) {
                 XMoveResizeWindow(

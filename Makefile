@@ -1,6 +1,6 @@
 INSTALL_DIR=$(HOME)/.local/bin
 
-LIBS=libpng x11 xft xrender
+LIBS=libpng libjpeg x11 xft xrender
 
 CFLAGS=-Wall -Wextra -Wpedantic -std=c90 -pedantic -lm \
 	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done) \

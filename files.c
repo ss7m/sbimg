@@ -1,4 +1,5 @@
 #include "common.h"
+#include "image.h"
 #include "files.h"
 
 #include <dirent.h>
@@ -13,16 +14,16 @@ static int sbimg_is_file(char *file_name) {
 static int sbimg_string_cmp(const void *a, const void *b) {
         char *sa = *(char **)a;
         char *sb = *(char **)b;
-        return strcmp(sa, sb);
-}
+        char ca, cb;
 
-static int sbimg_has_image_ext(char *file_name) {
-        char *ext = strrchr(file_name, '.');
-        if (ext == NULL) {
-                return false;
-        }
-
-        return strcmp(ext, ".png") == 0;
+        do {
+                ca = *sa++;
+                cb = *sb++;
+                if (ca == '\0' || ca == '.') {
+                        return ca - cb;
+                } 
+        } while (ca == cb);
+        return ca - cb;
 }
 
 void sbimg_files_destroy(struct sbimg_files *files) {
@@ -50,7 +51,7 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         while ((entry = readdir(directory)) != NULL) {
                 char *str;
 
-                if (!sbimg_has_image_ext(entry->d_name)) {
+                if (sbimg_parse_file_ext(entry->d_name) == IMAGE_TYPE_NONE) {
                         continue;
                 }
                 str = malloc(
@@ -71,7 +72,7 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         files->idx = -1;
         i = 0;
         while ((entry = readdir(directory)) != NULL) {
-                if (!sbimg_has_image_ext(entry->d_name)) {
+                if (sbimg_parse_file_ext(entry->d_name) == IMAGE_TYPE_NONE) {
                         continue;
                 }
 

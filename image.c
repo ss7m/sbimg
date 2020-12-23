@@ -1,6 +1,7 @@
 #include "common.h"
 #include "image.h"
 
+#include <jpeglib.h>
 #include <png.h>
 
 #define SBIMG_PNG_VERSION "1.6.37"
@@ -9,6 +10,64 @@
 #define sbimg_image_row_size(image) (image->width * 3 * sizeof(uint8_t))
 #define sbimg_image_xy(image, x, y) ((y) * image->width * 3 * sizeof(uint8_t) \
                         + (x) * 3 * sizeof(uint8_t))
+
+enum sbimg_image_type sbimg_parse_file_ext(const char *file_name) {
+        char *ext = strrchr(file_name, '.');
+
+        if (ext == NULL) {
+                return IMAGE_TYPE_NONE;
+        } else if (strcmp(ext, ".png") == 0) {
+                return IMAGE_TYPE_PNG;
+        } else if (strcmp(ext, ".jpg") == 0) {
+                return IMAGE_TYPE_JPG;
+        } else if (strcmp(ext, ".jpeg") == 0) {
+                return IMAGE_TYPE_JPG;
+        } else {
+                return IMAGE_TYPE_NONE;
+        }
+}
+
+/* Reading a JPG file */
+
+void sbimg_read_jpg_file(struct sbimg_image *image, const char *file_name) {
+        FILE *file;
+        struct jpeg_decompress_struct cinfo;
+        struct jpeg_error_mgr jerror;
+        JSAMPARRAY buffer;
+        unsigned int i, row_size; /* row width in buffer */
+
+        if ((file = fopen(file_name, "rb")) == NULL) {
+                sbimg_error("Unable to open file %s for reading\n", file_name);
+        }
+
+        cinfo.err = jpeg_std_error(&jerror);
+        jpeg_create_decompress(&cinfo);
+        jpeg_stdio_src(&cinfo, file);
+        jpeg_read_header(&cinfo, true);
+        jpeg_start_decompress(&cinfo);
+        
+        row_size = cinfo.output_width * cinfo.output_components;
+        image->data = malloc(row_size * cinfo.output_height);
+        image->width = cinfo.output_width;
+        image->height = cinfo.output_height;
+        buffer = cinfo.mem->alloc_sarray(
+                (j_common_ptr) &cinfo,
+                JPOOL_IMAGE,
+                row_size,
+                1
+        );
+
+        for(i = 0; i < cinfo.output_height; i++) {
+                jpeg_read_scanlines(&cinfo, buffer, 1);
+                memcpy(image->data + i * row_size, *buffer, row_size);
+        }
+
+        jpeg_finish_decompress(&cinfo);
+        jpeg_destroy_decompress(&cinfo);
+        fclose(file);
+}
+
+/* Reading a PNG file */
 
 struct sbimg_png_reader {
         png_struct *png;
@@ -94,8 +153,9 @@ static void sbimg_png_reader_load_image(
         image->data = malloc(row_size * image->height);
 
         image_rows = png_get_rows(reader->png, reader->info);
-        for (i = 0; i < image->height; i++)
+        for (i = 0; i < image->height; i++) {
                 memcpy(image->data + i * row_size, image_rows[i], row_size);
+        }
 }
 
 /*
@@ -104,9 +164,18 @@ static void sbimg_png_reader_load_image(
 
 void sbimg_image_init(struct sbimg_image *image, const char *file_name) {
         struct sbimg_png_reader reader;
-        sbimg_png_reader_init(&reader, file_name);
-        sbimg_png_reader_load_image(&reader, image);
-        sbimg_png_reader_destroy(&reader);
+        switch(sbimg_parse_file_ext(file_name)) {
+        case IMAGE_TYPE_PNG:
+                sbimg_png_reader_init(&reader, file_name);
+                sbimg_png_reader_load_image(&reader, image);
+                sbimg_png_reader_destroy(&reader);
+                break;
+        case IMAGE_TYPE_JPG:
+                sbimg_read_jpg_file(image, file_name);
+                break;
+        case IMAGE_TYPE_NONE:
+                sbimg_error("%s has a bad extension\n", file_name);
+        }
 }
 
 void sbimg_image_destroy(struct sbimg_image *image) {
