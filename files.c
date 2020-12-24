@@ -19,9 +19,13 @@ static int sbimg_string_cmp(const void *a, const void *b) {
         do {
                 ca = *sa++;
                 cb = *sb++;
-                if (ca == '\0' || ca == '.') {
+                if (ca == '\0') {
                         return ca - cb;
-                } 
+                } else if (ca == '.' && cb != '.') {
+                        return -1;
+                } else if (ca != '.' && cb == '.') {
+                        return 1;
+                }
         } while (ca == cb);
         return ca - cb;
 }
@@ -37,20 +41,28 @@ void sbimg_files_destroy(struct sbimg_files *files) {
 void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         DIR *directory;
         struct dirent *entry;
-        char *file_name_copy, *dir_name;
-        int i;
+        char *dir_name, *temp1, *temp2;
+        int i, files_capacity;
 
-        file_name_copy = malloc(sizeof(char) * (1 + strlen(file_name)));
-        strcpy(file_name_copy, file_name);
-        dir_name = dirname(file_name_copy);
+        /* get directory name and open directory */
+        temp1 = malloc(sizeof(char) * (1 + strlen(file_name)));
+        strcpy(temp1, file_name);
+        dir_name = dirname(temp1);
         directory = opendir(dir_name);
+
+        /* format file_name with dir_name */
         file_name = basename(file_name);
+        temp2 = malloc(2 + strlen(file_name) + strlen(dir_name));
+        sprintf(temp2, "%s/%s", dir_name, file_name);
+        file_name = temp2;
+
+        files_capacity = 4;
+        files->file_count = 0;
+        files->files = malloc(sizeof(char *) * files_capacity);
 
         /* count image files in the directory */
-        files->file_count = 0;
         while ((entry = readdir(directory)) != NULL) {
                 char *str;
-
                 if (sbimg_parse_file_ext(entry->d_name) == IMAGE_TYPE_NONE) {
                         continue;
                 }
@@ -62,31 +74,15 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
                         free(str);
                         continue;
                 }
-                free(str);
+                if (files->file_count >= files_capacity) {
+                        files_capacity *= 1.5;
+                        files->files = realloc(
+                                files->files,
+                                files_capacity * sizeof(char *)
+                        );
+                }
+                files->files[files->file_count] = str;
                 files->file_count += 1;
-        }
-
-        /* collect the names of the image files */
-        files->files = malloc(sizeof(char *) * files->file_count);
-        rewinddir(directory);
-        files->idx = -1;
-        i = 0;
-        while ((entry = readdir(directory)) != NULL) {
-                if (sbimg_parse_file_ext(entry->d_name) == IMAGE_TYPE_NONE) {
-                        continue;
-                }
-
-                files->files[i] = malloc(sizeof(char)
-                                * (2 + strlen(entry->d_name) + strlen(dir_name)));
-                sprintf(files->files[i], "%s/%s", dir_name, entry->d_name);
-                if (!sbimg_is_file(files->files[i])) {
-                        free(files->files[i]);
-                        continue;
-                } else if (strcmp(file_name, entry->d_name) == 0) {
-                        /* get full path of file_name so that we can look it up later */
-                        file_name = files->files[i];
-                }
-                i += 1;
         }
 
         /* sort alphabetically */
@@ -101,7 +97,8 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         } while (strcmp(file_name, files->files[i++]) != 0);
         files->idx = i - 1;
 
-        free(file_name_copy);
+        free(temp1);
+        free(temp2);
         free(directory);
 }
 
