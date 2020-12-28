@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
                 sbimg_winstate_init(
                         &winstate,
                         &files,
-                        "Hasklug Nerd Font",
+                        "Source Code Pro",
                         10.0
                 );
         }

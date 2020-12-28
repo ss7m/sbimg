@@ -42,7 +42,7 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         DIR *directory;
         struct dirent *entry;
         char *dir_name, *temp1, *temp2;
-        int i, files_capacity;
+        int files_capacity;
 
         /* get directory name and open directory */
         temp1 = malloc(sizeof(char) * (1 + strlen(file_name)));
@@ -89,13 +89,13 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
         qsort(files->files, files->file_count, sizeof(char *), sbimg_string_cmp);
 
         /* look up idx of file_name */
-        i = 0;
+        files->idx = 0;
         do {
-                if (i >= files->file_count) {
+                if (files->idx >= files->file_count) {
                         sbimg_error("%s not a file or has wrong extension\n", file_name);
                 }
-        } while (strcmp(file_name, files->files[i++]) != 0);
-        files->idx = i - 1;
+        } while (strcmp(file_name, files->files[files->idx++]) != 0);
+        files->idx--;
 
         free(temp1);
         free(temp2);
