@@ -86,6 +86,11 @@ static int sbimg_check_if_png(FILE *file) {
         return png_sig_cmp(bytes, 0, PNG_SIG_LENGTH) == 0;
 }
 
+static void sbimg_png_warn (png_struct *png, const char *msg) {
+        (void)png;
+        (void)msg;
+}
+
 /*
  * struct sbimg_png reading functions
  */
@@ -99,7 +104,7 @@ static void sbimg_png_reader_init(
         FILE *file;
         png_color_16 background;
 
-        png = png_create_read_struct(SBIMG_PNG_VERSION, NULL, NULL, NULL);
+        png = png_create_read_struct(SBIMG_PNG_VERSION, NULL, NULL, sbimg_png_warn);
         if (png == NULL) {
                 sbimg_error("Unable to create read struct\n");
         }
