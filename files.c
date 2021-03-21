@@ -14,20 +14,8 @@ static int sbimg_is_file(char *file_name) {
 static int sbimg_string_cmp(const void *a, const void *b) {
         char *sa = *(char **)a;
         char *sb = *(char **)b;
-        char ca, cb;
 
-        do {
-                ca = *sa++;
-                cb = *sb++;
-                if (ca == '\0') {
-                        return ca - cb;
-                } else if (ca == '.' && cb != '.') {
-                        return -1;
-                } else if (ca != '.' && cb == '.') {
-                        return 1;
-                }
-        } while (ca == cb);
-        return ca - cb;
+        return strverscmp(sa, sb);
 }
 
 void sbimg_files_destroy(struct sbimg_files *files) {

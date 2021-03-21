@@ -86,7 +86,7 @@ static int sbimg_check_if_png(FILE *file) {
         return png_sig_cmp(bytes, 0, PNG_SIG_LENGTH) == 0;
 }
 
-static void sbimg_png_warn (png_struct *png, const char *msg) {
+static void sbimg_png_warn(png_struct *png, const char *msg) {
         (void)png;
         (void)msg;
 }

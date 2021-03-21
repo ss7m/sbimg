@@ -4,7 +4,7 @@ LIBS=libpng libjpeg x11 xft xrender
 
 CFLAGS=-Wall -Wextra -Wpedantic -std=c90 -pedantic -lm \
 	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done) \
-	   -D_POSIX_C_SOURCE=199309L
+	   -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 
 SRCS=main.c image.c fonts.c files.c window.c
 OBJS=$(SRCS:.c=.o)
