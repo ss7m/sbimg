@@ -11,7 +11,7 @@
 #define txth(w) (sbimg_textbox_font_height(&w->textbox) * 1.1)
 
 #define ZOOM_AMT 1.2
-#define MOVE_PCT 0.03
+#define MOVE_PCT 0.07
 
 enum {
         TEXT = (1 << 0),
@@ -213,11 +213,11 @@ void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num) {
 void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y) {
         winstate->changes |= IMAGE;
         winstate->center_x +=
-                min(winstate->window_width, winstate->ximage->width)
-                * x * winstate->zoom * MOVE_PCT;
+                min(winstate->window_width, winstate->ximage->width * winstate->zoom)
+                * x * MOVE_PCT;
         winstate->center_y +=
-                min(winstate->window_height, winstate->ximage->height)
-                * y * winstate->zoom * MOVE_PCT;
+                min(winstate->window_height, winstate->ximage->height * winstate->zoom)
+                * y * MOVE_PCT;
 }
 
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p) {
