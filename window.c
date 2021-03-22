@@ -221,6 +221,11 @@ void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y) {
 }
 
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p) {
+        if (p < 0 && min(winstate->ximage->height, winstate->ximage->width) * winstate->zoom < 10) {
+                return;
+        } else if (p > 0 && max(winstate->ximage->height, winstate->ximage->width) * winstate->zoom > max(winstate->window_width, winstate->window_height) * 14) {
+                return;
+        }
         winstate->changes |= IMAGE;
         winstate->zoom *= pow(ZOOM_AMT, p);
         winstate->center_x = winstate->window_width / 2
