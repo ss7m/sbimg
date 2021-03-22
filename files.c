@@ -97,5 +97,4 @@ void sbimg_files_shift(struct sbimg_files *files, int num) {
         } else {
                 files->idx = files->file_count - (-idx) % files->file_count;
         }
-        printf("%d\n", files->idx);
 }
