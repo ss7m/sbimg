@@ -91,8 +91,11 @@ void sbimg_files_init(struct sbimg_files *files, char *file_name) {
 }
 
 void sbimg_files_shift(struct sbimg_files *files, int num) {
-        files->idx = min(
-                files->file_count - 1,
-                max(0, files->idx + num)
-        );
+        int idx = files->idx + num;
+        if (idx >= 0) {
+                files->idx = idx % files->file_count;
+        } else {
+                files->idx = files->file_count - (-idx) % files->file_count;
+        }
+        printf("%d\n", files->idx);
 }
