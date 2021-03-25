@@ -3,6 +3,7 @@ INSTALL_DIR=$(HOME)/.local/bin
 LIBS=libpng libjpeg x11 xft xrender
 
 CFLAGS=-Wall -Wextra -Wpedantic -std=c90 -pedantic -lm \
+	   -Wshadow -Wpointer-arith -Wcast-qual \
 	   $(shell for lib in $(LIBS); do pkg-config --cflags --libs $$lib; done) \
 	   -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 

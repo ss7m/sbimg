@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
                         break;
                 case ClientMessage:
                         if ((Atom)e.xclient.data.l[0] == delete_message) {
-                                goto cleanup;
+                                goto end_program;
                         }
                         break;
                 case KeyPress:
@@ -128,15 +128,14 @@ int main(int argc, char **argv) {
                         }
                         switch (XLookupKeysym(&e.xkey, 0)) {
                         case XK_q:
-                                goto cleanup;
+                                goto end_program;
                         case XK_h:
                                 if (e.xkey.state & ShiftMask) {
                                         sbimg_winstate_shift_file(&winstate, -1);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate, 
-                                                -1,
-                                                0
+                                                -1, 0
                                         );
                                 }
                                 break;
@@ -146,8 +145,7 @@ int main(int argc, char **argv) {
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
-                                                0,
-                                                1
+                                                0, 1
                                         );
                                 }
                                 break;
@@ -157,8 +155,7 @@ int main(int argc, char **argv) {
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
-                                                0,
-                                                -1
+                                                0, -1
                                         );
                                 }
                                 break;
@@ -168,8 +165,7 @@ int main(int argc, char **argv) {
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
-                                                1,
-                                                0
+                                                1, 0
                                         );
                                 }
                                 break;
@@ -179,7 +175,9 @@ int main(int argc, char **argv) {
                 sbimg_winstate_redraw(&winstate, force_redraw);
         }
 
-cleanup:
+end_program:
+        printf("%s\n", winstate.files.files[winstate.files.idx]);
+
         sbimg_winstate_destroy(&winstate);
         XCloseDisplay(display);
         return EXIT_SUCCESS;

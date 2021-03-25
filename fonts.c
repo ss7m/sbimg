@@ -70,7 +70,7 @@ void sbimg_textbox_write(
                 &textbox->xftcolor,
                 textbox->xftfont,
                 x, y,
-                (FcChar8 *)msg,
+                (const FcChar8 *)msg,
                 strlen(msg)
         );
 }

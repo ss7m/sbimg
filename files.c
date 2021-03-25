@@ -12,8 +12,8 @@ static int sbimg_is_file(char *file_name) {
 }
 
 static int sbimg_string_cmp(const void *a, const void *b) {
-        char *sa = *(char **)a;
-        char *sb = *(char **)b;
+        const char *sa = *(char * const *)a;
+        const char *sb = *(char * const *)b;
 
         return strverscmp(sa, sb);
 }
