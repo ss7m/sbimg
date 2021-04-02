@@ -1,7 +1,6 @@
 #include "common.h"
 #include "image.h"
-#include "files.h"
-
+#include "files.h" 
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -95,6 +94,9 @@ void sbimg_files_shift(struct sbimg_files *files, int num) {
         if (idx >= 0) {
                 files->idx = idx % files->file_count;
         } else {
-                files->idx = files->file_count - (-idx) % files->file_count;
+                while (idx < 0) {
+                        idx += files->file_count;
+                }
+                files->idx = idx;
         }
 }
