@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
         struct sbimg_winstate winstate;
         struct timespec last_move;
         Atom delete_message;
+        int numkey_used = false, count = 1;
 
         if (argc != 2 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
                 printf(
@@ -74,7 +75,7 @@ int main(int argc, char **argv) {
 
         for(;;) {
                 struct timespec curr_time;
-                int force_redraw = false;
+                int force_redraw = false, keysym;
                 XEvent e;
 
                 /* discard extra events */
@@ -126,48 +127,75 @@ int main(int argc, char **argv) {
                         } else {
                                 last_move = curr_time;
                         }
-                        switch (XLookupKeysym(&e.xkey, 0)) {
+
+                        keysym = XLookupKeysym(&e.xkey, 0);
+                        switch (keysym) {
                         case XK_q:
                                 goto end_program;
                         case XK_h:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_shift_file(&winstate, -1);
+                                        sbimg_winstate_shift_file(&winstate, -count);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate, 
-                                                -1, 0
+                                                -count, 0
                                         );
                                 }
+                                numkey_used = false;
+                                count = 1;
                                 break;
                         case XK_j:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_zoom(&winstate, -1);
+                                        sbimg_winstate_zoom(&winstate, -count);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
-                                                0, 1
+                                                0, count
                                         );
                                 }
+                                numkey_used = false;
+                                count = 1;
                                 break;
                         case XK_k:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_zoom(&winstate, 1);
+                                        sbimg_winstate_zoom(&winstate, count);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
-                                                0, -1
+                                                0, -count
                                         );
                                 }
+                                numkey_used = false;
+                                count = 1;
                                 break;
                         case XK_l:
                                 if (e.xkey.state & ShiftMask) {
-                                        sbimg_winstate_shift_file(&winstate, 1);
+                                        sbimg_winstate_shift_file(&winstate, count);
                                 } else {
                                         sbimg_winstate_translate(
                                                 &winstate,
-                                                1, 0
+                                                count, 0
                                         );
                                 }
+                                numkey_used = false;
+                                count = 1;
+                                break;
+                        case XK_0:
+                        case XK_1:
+                        case XK_2:
+                        case XK_3:
+                        case XK_4:
+                        case XK_5:
+                        case XK_6:
+                        case XK_7:
+                        case XK_8:
+                        case XK_9:
+                                if (numkey_used) {
+                                        count = count * 10 + keysym - XK_0;
+                                } else {
+                                        count = keysym - XK_0;
+                                }
+                                numkey_used = true;
                                 break;
                         }
                 }
