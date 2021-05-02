@@ -46,6 +46,8 @@ int main(int argc, char **argv) {
                         "  K              zoom in\n"
                         "  L              go to next image\n"
                         "\n"
+                        "Commands can optionally be prepended with a count\n"
+                        "\n"
                 );
                 exit(EXIT_FAILURE);
         }
