@@ -23,7 +23,6 @@ enum {
 static void sbimg_winstate_gen_ximage(
         struct sbimg_winstate *winstate,
         struct sbimg_image *image) {
-        size_t x, y;
         char *data;
 
         /* Xlib has every pixel take up 4 bytes??? idk tbh */
@@ -57,8 +56,8 @@ static void sbimg_winstate_gen_ximage(
                 0, NULL
         );
 
-        for (x = 0; x < image->width; x++) {
-                for (y = 0; y < image->height; y++) {
+        for (size_t x = 0; x < image->width; x++) {
+                for (size_t y = 0; y < image->height; y++) {
                         struct sbimg_pixel p = sbimg_image_get_pixel(image, x, y);
                         XPutPixel(
                                 winstate->ximage,
@@ -81,6 +80,7 @@ static void sbimg_winstate_gen_ximage(
 
 static void sbimg_winstate_apply_transform(struct sbimg_winstate *winstate) {
         XTransform transform = {0};
+
         transform.matrix[0][0] = XDoubleToFixed(1/winstate->zoom);
         transform.matrix[1][1] = XDoubleToFixed(1/winstate->zoom);
         transform.matrix[2][2] = XDoubleToFixed(1.0);

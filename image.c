@@ -150,7 +150,7 @@ static void sbimg_png_reader_load_image(
         struct sbimg_png_reader *reader,
         struct sbimg_image *image)
 {
-        size_t i, row_size;
+        size_t row_size;
         uint8_t **image_rows;
 
         image->width = png_get_image_width(reader->png, reader->info);
@@ -160,7 +160,7 @@ static void sbimg_png_reader_load_image(
         image->data = malloc(row_size * image->height);
 
         image_rows = png_get_rows(reader->png, reader->info);
-        for (i = 0; i < image->height; i++) {
+        for (size_t i = 0; i < image->height; i++) {
                 memcpy(image->data + i * row_size, image_rows[i], row_size);
         }
 }

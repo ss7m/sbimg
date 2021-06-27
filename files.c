@@ -18,8 +18,7 @@ static int sbimg_string_cmp(const void *a, const void *b) {
 }
 
 void sbimg_files_destroy(struct sbimg_files *files) {
-        int i;
-        for (i = 0; i < files->file_count; i++) {
+        for (int i = 0; i < files->file_count; i++) {
                 free(files->files[i]);
         }
         free(files->files);
