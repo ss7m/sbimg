@@ -26,7 +26,8 @@ int main(int argc, char **argv) {
         struct sbimg_winstate winstate;
         struct timespec last_move;
         Atom delete_message;
-        int numkey_used = false, count = 1;
+        int numkey_used = false;
+        unsigned int count = 1;
 
         if (argc != 2 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
                 printf(

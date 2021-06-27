@@ -6,6 +6,8 @@
 
 #include <math.h>
 
+#define INITIAL_WINDOW_SIZE 500
+
 #define tlx(w) ((w)->center_x - (w)->zoom * (w)->ximage->width / 2)
 #define tly(w) ((w)->center_y - (w)->zoom * (w)->ximage->height / 2)
 #define txth(w) (sbimg_textbox_font_height(&w->textbox) * 1.1)
@@ -18,12 +20,14 @@ enum {
         IMAGE = (1 << 2)
 };
 
-static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
+static void sbimg_winstate_gen_ximage(
+        struct sbimg_winstate *winstate,
+        struct sbimg_image *image) {
         size_t x, y;
         char *data;
 
         /* Xlib has every pixel take up 4 bytes??? idk tbh */
-        data = malloc(sizeof(char) * winstate->image.width * winstate->image.height * 4);
+        data = malloc(sizeof(char) * image->width * image->height * 4);
         winstate->ximage = XCreateImage(
                 display,
                 CopyFromParent,
@@ -31,16 +35,16 @@ static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
                 ZPixmap,
                 0,
                 data,
-                winstate->image.width,
-                winstate->image.height,
+                image->width,
+                image->height,
                 32,
                 0
         );
         winstate->pixmap = XCreatePixmap(
                 display,
                 winstate->image_window,
-                winstate->image.width,
-                winstate->image.height,
+                image->width,
+                image->height,
                 DefaultDepth(display, DefaultScreen(display))
         );
         winstate->image_picture = XRenderCreatePicture(
@@ -53,12 +57,9 @@ static void sbimg_winstate_gen_ximage(struct sbimg_winstate *winstate) {
                 0, NULL
         );
 
-        for (x = 0; x < winstate->image.width; x++) {
-                for (y = 0; y < winstate->image.height; y++) {
-                        struct sbimg_pixel p = sbimg_image_get_pixel(
-                                &winstate->image,
-                                x, y
-                        );
+        for (x = 0; x < image->width; x++) {
+                for (y = 0; y < image->height; y++) {
+                        struct sbimg_pixel p = sbimg_image_get_pixel(image, x, y);
                         XPutPixel(
                                 winstate->ximage,
                                 x, y,
@@ -87,7 +88,6 @@ static void sbimg_winstate_apply_transform(struct sbimg_winstate *winstate) {
 }
 
 void sbimg_winstate_destroy(struct sbimg_winstate *winstate) {
-        sbimg_image_destroy(&winstate->image);
         sbimg_textbox_destroy(&winstate->textbox);
         sbimg_files_destroy(&winstate->files);
         XDestroyImage(winstate->ximage);
@@ -105,19 +105,19 @@ void sbimg_winstate_init(
         double font_size)
 {
         XWindowAttributes attributes;
+        struct sbimg_image image;
 
         winstate->files = *files;
         winstate->changes = 0;
         winstate->zoom = 1.0;
-        sbimg_image_init(&winstate->image, sbimg_files_curr(files));
-        winstate->window_width = winstate->image.width;
-        winstate->window_height = winstate->image.height;
+        winstate->window_width = INITIAL_WINDOW_SIZE;
+        winstate->window_height = INITIAL_WINDOW_SIZE;
 
         winstate->window = XCreateSimpleWindow(
                 display,
                 DefaultRootWindow(display),
                 0, 0,
-                winstate->image.width, winstate->image.height,
+                INITIAL_WINDOW_SIZE, INITIAL_WINDOW_SIZE,
                 0,
                 WhitePixel(display, DefaultScreen(display)),
                 WhitePixel(display, DefaultScreen(display))
@@ -142,7 +142,10 @@ void sbimg_winstate_init(
                 ),
                 0, NULL
         );
-        sbimg_winstate_gen_ximage(winstate);
+
+        sbimg_image_init(&image, sbimg_files_curr(files));
+        sbimg_winstate_gen_ximage(winstate, &image);
+        sbimg_image_destroy(&image);
         sbimg_winstate_apply_transform(winstate);
 
         winstate->text_window = XCreateSimpleWindow(
@@ -193,6 +196,8 @@ void sbimg_winstate_set_dimensions(
 }
 
 void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num) {
+        struct sbimg_image image;
+
         winstate->changes |= IMAGE;
         winstate->changes |= TEXT;
         winstate->zoom = 1.0;
@@ -201,12 +206,9 @@ void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num) {
         sbimg_files_shift(&winstate->files, num);
         XFreePixmap(display, winstate->pixmap);
         XDestroyImage(winstate->ximage);
-        sbimg_image_destroy(&winstate->image);
-        sbimg_image_init(
-                &winstate->image,
-                sbimg_files_curr(&winstate->files)
-        );
-        sbimg_winstate_gen_ximage(winstate);
+        sbimg_image_init(&image, sbimg_files_curr(&winstate->files));
+        sbimg_winstate_gen_ximage(winstate, &image);
+        sbimg_image_destroy(&image);
         sbimg_winstate_apply_transform(winstate);
 }
 

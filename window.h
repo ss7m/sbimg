@@ -2,7 +2,6 @@
 #define SBIMG_WINDOW_H
 
 struct sbimg_winstate {
-        struct sbimg_image image;
         struct sbimg_textbox textbox;
         struct sbimg_files files;
         XImage *ximage;
