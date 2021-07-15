@@ -1,7 +1,7 @@
 #ifndef SBIMG_FONTS_H
 #define SBIMG_FONTS_H
 
-#include "X11/Xft/Xft.h"
+#include <X11/Xft/Xft.h>
 
 struct sbimg_textbox {
         XftFont *xftfont;
