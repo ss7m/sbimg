@@ -46,6 +46,8 @@ int main(int argc, char **argv) {
                         "  J              zoom out\n"
                         "  K              zoom in\n"
                         "  L              go to next image\n"
+                        "  r              rotate image clockwise\n"
+                        "  R              rotate image counter-clockwise\n"
                         "\n"
                         "Commands can optionally be prepended with a count\n"
                         "\n"
@@ -179,6 +181,15 @@ int main(int argc, char **argv) {
                                                 &winstate,
                                                 count, 0
                                         );
+                                }
+                                numkey_used = false;
+                                count = 1;
+                                break;
+                        case XK_r:
+                                if (e.xkey.state & ShiftMask) {
+                                        sbimg_winstate_rotate(&winstate, -count);
+                                } else {
+                                        sbimg_winstate_rotate(&winstate, count);
                                 }
                                 numkey_used = false;
                                 count = 1;

@@ -11,6 +11,7 @@ struct sbimg_winstate {
         Picture window_picture, image_picture;
         int window_width, window_height, center_x, center_y, changes;
         double zoom;
+        int rotation;
 };
 
 void sbimg_winstate_destroy(struct sbimg_winstate *winstate);
@@ -31,6 +32,7 @@ void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num);
 
 void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y);
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p);
+void sbimg_winstate_rotate(struct sbimg_winstate *winstate, int r);
 
 void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw);
 

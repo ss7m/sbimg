@@ -80,10 +80,20 @@ static void sbimg_winstate_gen_ximage(
 
 static void sbimg_winstate_apply_transform(struct sbimg_winstate *winstate) {
         XTransform transform = {0};
+        int trig[] = {0, 1, 0, -1};
+        double a, b, c, d;
 
-        transform.matrix[0][0] = XDoubleToFixed(1/winstate->zoom);
-        transform.matrix[1][1] = XDoubleToFixed(1/winstate->zoom);
+        a = 1 / winstate->zoom * trig[(winstate->rotation+1) % 4];
+        b = 1 / winstate->zoom * trig[winstate->rotation];
+        c = -b;
+        d = a;
+
+        transform.matrix[0][0] = XDoubleToFixed(a);
+        transform.matrix[0][1] = XDoubleToFixed(b);
+        transform.matrix[1][0] = XDoubleToFixed(c);
+        transform.matrix[1][1] = XDoubleToFixed(d);
         transform.matrix[2][2] = XDoubleToFixed(1.0);
+
         XRenderSetPictureTransform(display, winstate->image_picture, &transform);
 }
 
@@ -110,6 +120,7 @@ void sbimg_winstate_init(
         winstate->files = *files;
         winstate->changes = 0;
         winstate->zoom = 1.0;
+        winstate->rotation = 0;
         winstate->window_width = INITIAL_WINDOW_SIZE;
         winstate->window_height = INITIAL_WINDOW_SIZE;
 
@@ -201,6 +212,7 @@ void sbimg_winstate_shift_file(struct sbimg_winstate *winstate, int num) {
         winstate->changes |= IMAGE;
         winstate->changes |= TEXT;
         winstate->zoom = 1.0;
+        winstate->rotation = 0;
         winstate->center_x = winstate->window_width / 2;
         winstate->center_y = winstate->window_height / 2;
         sbimg_files_shift(&winstate->files, num);
@@ -234,28 +246,36 @@ void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p) {
         sbimg_winstate_apply_transform(winstate);
 }
 
+void sbimg_winstate_rotate(struct sbimg_winstate *winstate, int r) {
+        winstate->changes |= IMAGE;
+        winstate->rotation = (winstate->rotation + r) % 4;
+        sbimg_winstate_apply_transform(winstate);
+}
+
 void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
         char str[1024] = {0};
         int text_height = txth(winstate);
 
         if (winstate->changes & IMAGE || force_redraw) {
+                // TODO: fix center when rotating
+                int w = winstate->zoom * ((winstate->rotation % 2 == 0) ? winstate->ximage->width : winstate->ximage->height);
+                int h = winstate->zoom * ((winstate->rotation % 2 == 0) ? winstate->ximage->height : winstate->ximage->width);
+                int src_x = (winstate->rotation == 1 || winstate->rotation == 2)
+                        ? -w : 0;
+                int src_y = (winstate->rotation == 2 || winstate->rotation == 3)
+                        ? -h : 0;
                 XMoveResizeWindow(
-                        display,
-                        winstate->image_window,
-                        tlx(winstate),
-                        tly(winstate),
-                        winstate->zoom * winstate->ximage->width,
-                        winstate->zoom * winstate->ximage->height
+                        display, winstate->image_window,
+                        tlx(winstate), tly(winstate),
+                        w, h
                 );
                 XRenderComposite(
-                        display,
-                        PictOpOver,
+                        display, PictOpOver,
                         winstate->image_picture,
                         0,
                         winstate->window_picture,
-                        0, 0, 0, 0, 0, 0,
-                        winstate->zoom * winstate->ximage->width,
-                        winstate->zoom * winstate->ximage->height
+                        src_x, src_y, 0, 0, 0, 0,
+                        w, h
                 );
         }
 
