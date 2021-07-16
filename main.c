@@ -8,7 +8,7 @@ Display *display;
 
 #define MOVE_TIMEOUT 60000000L
 
-long timespec_diff(struct timespec *x, struct timespec *y) {
+static long timespec_diff(struct timespec *x, struct timespec *y) {
         long xnsec = x->tv_sec * 1e9 + x->tv_nsec;
         long ynsec = y->tv_sec * 1e9 + y->tv_nsec;
         return xnsec - ynsec;
@@ -32,7 +32,9 @@ int main(int argc, char **argv) {
         if (argc != 2 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
                 printf(
                         "Usage: sbimg [file]\n"
-                        "\nA simple X image viewer\n\n"
+                        "\n"
+                        "A simple X image viewer\n"
+                        "\n"
                         "Options:\n"
                         "  -h, --help     print this message and exit\n"
                         "\n"
