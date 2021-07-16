@@ -223,12 +223,14 @@ void sbimg_winstate_translate(struct sbimg_winstate *winstate, int x, int y) {
 }
 
 void sbimg_winstate_zoom(struct sbimg_winstate *winstate, int p) {
+        double zoom_amt, old_zoom = winstate->zoom;
         winstate->changes |= IMAGE;
         winstate->zoom = min(14, max(0.1, winstate->zoom * pow(ZOOM_AMT, p)));
+        zoom_amt = winstate->zoom / old_zoom;
         winstate->center_x = winstate->window_width / 2
-                + pow(ZOOM_AMT, p) * (winstate->center_x - winstate->window_width / 2);
+                + zoom_amt * (winstate->center_x - winstate->window_width / 2);
         winstate->center_y = winstate->window_height / 2
-                + pow(ZOOM_AMT, p) * (winstate->center_y - winstate->window_height / 2);
+                + zoom_amt * (winstate->center_y - winstate->window_height / 2);
         sbimg_winstate_apply_transform(winstate);
 }
 
