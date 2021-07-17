@@ -257,17 +257,18 @@ void sbimg_winstate_redraw(struct sbimg_winstate *winstate, int force_redraw) {
         int text_height = txth(winstate);
 
         if (winstate->changes & IMAGE || force_redraw) {
-                // TODO: fix center when rotating
-                int w = winstate->zoom * ((winstate->rotation % 2 == 0) ? winstate->ximage->width : winstate->ximage->height);
-                int h = winstate->zoom * ((winstate->rotation % 2 == 0) ? winstate->ximage->height : winstate->ximage->width);
+                int sideways = winstate->rotation % 2 == 0;
+                int w = winstate->zoom * (sideways ? winstate->ximage->width : winstate->ximage->height);
+                int h = winstate->zoom * (sideways ? winstate->ximage->height : winstate->ximage->width);
+                int x = winstate->center_x - w / 2;
+                int y = winstate->center_y - h / 2;
                 int src_x = (winstate->rotation == 1 || winstate->rotation == 2)
                         ? -w : 0;
                 int src_y = (winstate->rotation == 2 || winstate->rotation == 3)
                         ? -h : 0;
                 XMoveResizeWindow(
                         display, winstate->image_window,
-                        tlx(winstate), tly(winstate),
-                        w, h
+                        x, y, w, h
                 );
                 XRenderComposite(
                         display, PictOpOver,
